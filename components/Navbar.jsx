@@ -37,12 +37,6 @@ const Navbar = () => {
             Shop
           </Link>
           <Link
-            href="/about"
-            className="hover:text-gray-900 transition font-bold"
-          >
-            About Us
-          </Link>
-          <Link
             href="/contact"
             className="hover:text-gray-900 transition font-bold"
           >
@@ -52,10 +46,6 @@ const Navbar = () => {
 
         {/* Right Icons - Desktop */}
         <ul className="hidden md:flex items-center gap-4">
-          {/* Search */}
-          <button>
-            <Image className="w-4 h-4" src={assets.search_icon} alt="search" />
-          </button>
 
           {/* Cart with Badge */}
           <Link href="/cart" className="relative">

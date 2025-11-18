@@ -6,8 +6,8 @@ import { Toaster } from "react-hot-toast";
 const outfit = Outfit({ subsets: ['latin'], weight: ["300", "400", "500"] })
 
 export const metadata = {
-  title: "Fashion-Ecom template",
-  description: "E-Commerce with Next.js ",
+  title: "Da Fleek Clan",
+  description: "Made for moving men",
 };
 
 export default function RootLayout({ children }) {

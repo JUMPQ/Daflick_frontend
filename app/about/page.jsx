@@ -12,8 +12,8 @@ const AboutUs = () => {
       <div className="flex flex-col items-center px-6 md:px-16 lg:px-32 bg-gray-50">
         {/* Hero Section */}
         <section className="pt-16 pb-24 w-full text-center bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg shadow-lg">
-          <h1 className="text-4xl md:text-5xl font-bold">Welcome to Fashion</h1>
-          <p className="mt-4 text-xl md:text-2xl">Where style meets sophistication and quality meets affordability.</p>
+          <h1 className="text-4xl md:text-5xl font-bold">Welcome to Da Fleek Clan</h1>
+          <p className="mt-4 text-xl md:text-2xl">Made for Moving men.</p>
         </section>
 
         {/* Our Story Section */}
@@ -21,7 +21,7 @@ const AboutUs = () => {
           <h2 className="text-3xl font-semibold text-gray-800">Our Story</h2>
           <div className="w-16 h-1 bg-orange-600 rounded-full mx-auto my-4"></div>
           <p className="text-lg md:text-xl text-gray-700 max-w-3xl mx-auto">
-            Fashion was born out of a passion for stylish and affordable clothing. Our mission is simple: to make high-quality fashion accessible to everyone. We carefully curate collections that reflect the latest trends while ensuring every piece feels as good as it looks.
+            Da Fleek was born out of a passion for stylish and affordable clothing. Our mission is simple: to make high-quality fashion accessible to everyone. We carefully curate collections that reflect the latest trends while ensuring every piece feels as good as it looks.
           </p>
           <div className="mt-8">
                 <Image className="h-100 w-full" src={assets.about_img} alt="star_icon" />

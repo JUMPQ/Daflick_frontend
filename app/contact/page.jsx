@@ -10,7 +10,7 @@ const ContactUs = () => {
       <div className="flex flex-col items-center px-6 md:px-16 lg:px-32 bg-gray-50">
         {/* Hero Section */}
         <section className="pt-16 pb-24 w-full text-center bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg shadow-lg">
-          <h1 className="text-4xl md:text-5xl font-bold">Get in Touch with Fashion</h1>
+          <h1 className="text-4xl md:text-5xl font-bold">Get in Touch with Da Fleek Clan</h1>
           <p className="mt-4 text-xl md:text-2xl">We’d love to hear from you. Whether you have a question or just want to say hello, we’re here to help!</p>
         </section>
 
@@ -23,9 +23,8 @@ const ContactUs = () => {
               If you have any inquiries or need assistance, feel free to reach out to us. Our customer support team is available 24/7 and ready to assist with any of your concerns.
             </p>
             <div className="text-gray-700">
-              <p className="text-lg">Email: support@fashion.com</p>
-              <p className="text-lg">Phone: +1 (123) 456-7890</p>
-              <p className="text-lg">Address: 123 Fashion Street, City, Country</p>
+              <p className="text-lg">Email: info@dfc.jumpqapp.com</p>
+              <p className="text-lg">Phone: +234 (0) 816 377 3475</p>
             </div>
           </div>
 

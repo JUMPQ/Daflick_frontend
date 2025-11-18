@@ -14,12 +14,14 @@ export const useAppContext = () => {
 };
 
 export const AppContextProvider = ({ children }) => {
-  const currency = process.env.NEXT_PUBLIC_CURRENCY || "$";
+  const currency = process.env.NEXT_PUBLIC_CURRENCY || "₦";
+  const router = useRouter();
+
+  // === STATE ===
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [products, setProducts] = useState([]);
   const [cart, setCart] = useState({ items: [], total: 0, item_count: 0 });
-  const router = useRouter();
 
   // === FETCH USER ===
   const fetchUser = async () => {
@@ -33,9 +35,12 @@ export const AppContextProvider = ({ children }) => {
       if (res.ok) {
         const data = await res.json();
         setUser(data.user);
+      } else {
+        setUser(null);
       }
     } catch (err) {
-      console.log("No session");
+      console.log("No session or error:", err);
+      setUser(null);
     } finally {
       setIsLoading(false);
     }
@@ -49,7 +54,6 @@ export const AppContextProvider = ({ children }) => {
           `${process.env.NEXT_PUBLIC_API_URL}/api/products`
         );
         const data = await res.json();
-        console.log("Fetched products:", data);
         setProducts(data);
       } catch (err) {
         console.error("Failed to fetch products:", err);
@@ -77,6 +81,7 @@ export const AppContextProvider = ({ children }) => {
       }
     } catch (err) {
       console.error("Failed to fetch cart:", err);
+      setCart({ items: [], total: 0, item_count: 0 });
     }
   };
 
@@ -84,6 +89,7 @@ export const AppContextProvider = ({ children }) => {
   const addToCart = async (productId, quantity = 1) => {
     if (!user) {
       toast.error("Please login to add to cart");
+      router.push("/login");
       return;
     }
 
@@ -99,19 +105,19 @@ export const AppContextProvider = ({ children }) => {
       );
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message);
+      if (!res.ok) throw new Error(data.message || "Failed to add");
 
       toast.success("Added to cart!");
-      fetchCart();
+      await fetchCart();
     } catch (err) {
-      toast.error(err.message || "Failed to add");
+      toast.error(err.message || "Failed to add to cart");
     }
   };
 
   // === UPDATE CART QUANTITY ===
   const updateCartQuantity = async (cartItemId, quantity) => {
     if (quantity < 1) {
-      removeFromCart(cartItemId);
+      await removeFromCart(cartItemId);
       return;
     }
 
@@ -127,9 +133,9 @@ export const AppContextProvider = ({ children }) => {
       );
 
       if (!res.ok) throw new Error("Update failed");
-      fetchCart();
+      await fetchCart();
     } catch (err) {
-      toast.error("Failed to update");
+      toast.error("Failed to update cart");
     }
   };
 
@@ -148,17 +154,54 @@ export const AppContextProvider = ({ children }) => {
 
       if (!res.ok) throw new Error("Remove failed");
       toast.success("Removed from cart");
-      fetchCart();
+      await fetchCart();
     } catch (err) {
-      toast.error("Failed to remove");
+      toast.error("Failed to remove item");
     }
   };
 
-  // === GET CART COUNT & TOTAL ===
+  // === CART HELPERS ===
   const getCartCount = () => cart.item_count || 0;
   const getCartAmount = () => cart.total || 0;
 
-  // === FETCH ON LOGIN/LOGOUT ===
+  // === LOGIN ===
+  const login = async (email, password) => {
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+          credentials: "include",
+        }
+      );
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Login failed");
+
+      await fetchUser(); // Re-fetch user with new cookie
+      toast.success("Logged in successfully!");
+      router.push("/");
+    } catch (err) {
+      toast.error(err.message || "Login failed");
+      throw err;
+    }
+  };
+
+  // === LOGOUT ===
+  const logout = () => {
+    // Clear cookie with SameSite=None; Secure
+    document.cookie =
+      "token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT; secure; samesite=none";
+
+    setUser(null);
+    setCart({ items: [], total: 0, item_count: 0 });
+    toast.success("Logged out");
+    router.push("/");
+  };
+
+  // === EFFECTS ===
   useEffect(() => {
     fetchUser();
   }, []);
@@ -167,17 +210,12 @@ export const AppContextProvider = ({ children }) => {
     fetchCart();
   }, [user]);
 
+  // === CONTEXT VALUE ===
   const value = {
     currency,
     user,
-    login: () => {}, // placeholder
-    logout: () => {
-      document.cookie =
-        "token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT; secure; samesite=strict";
-      setUser(null);
-      toast.success("Logged out");
-      router.push("/");
-    },
+    login,
+    logout,
     isLoading,
     products,
     cart,
