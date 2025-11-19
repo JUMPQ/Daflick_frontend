@@ -1,8 +1,8 @@
-// context/AppContext.js
+// context/AppContext.js → 100% GUEST CHECKOUT READY
 "use client";
-import { useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
 const AppContext = createContext();
 
@@ -14,39 +14,14 @@ export const useAppContext = () => {
 };
 
 export const AppContextProvider = ({ children }) => {
-  const currency = process.env.NEXT_PUBLIC_CURRENCY || "₦";
+  const currency = "₦";
   const router = useRouter();
 
-  // === STATE ===
-  const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [products, setProducts] = useState([]);
   const [cart, setCart] = useState({ items: [], total: 0, item_count: 0 });
+  const [loadingCart, setLoadingCart] = useState(true);
 
-  // === FETCH USER ===
-  const fetchUser = async () => {
-    try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/me`,
-        {
-          credentials: "include",
-        }
-      );
-      if (res.ok) {
-        const data = await res.json();
-        setUser(data.user);
-      } else {
-        setUser(null);
-      }
-    } catch (err) {
-      console.log("No session or error:", err);
-      setUser(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // === FETCH PRODUCTS ===
+  // === FETCH PRODUCTS (unchanged) ===
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -62,17 +37,14 @@ export const AppContextProvider = ({ children }) => {
     fetchProducts();
   }, []);
 
-  // === FETCH CART ===
+  // === FETCH CART — NOW WORKS FOR GUESTS (via session) ===
   const fetchCart = async () => {
-    if (!user) {
-      setCart({ items: [], total: 0, item_count: 0 });
-      return;
-    }
-
+    setLoadingCart(true);
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/cart`, {
-        credentials: "include",
+        credentials: "include", // This sends session cookie
       });
+
       if (res.ok) {
         const data = await res.json();
         setCart(data);
@@ -80,27 +52,23 @@ export const AppContextProvider = ({ children }) => {
         setCart({ items: [], total: 0, item_count: 0 });
       }
     } catch (err) {
-      console.error("Failed to fetch cart:", err);
+      console.error("Cart fetch error:", err);
       setCart({ items: [], total: 0, item_count: 0 });
+    } finally {
+      setLoadingCart(false);
     }
   };
 
-  // === ADD TO CART ===
+  // === ADD TO CART — NO LOGIN REQUIRED ===
   const addToCart = async (productId, quantity = 1) => {
-    if (!user) {
-      toast.error("Please login to add to cart");
-      router.push("/login");
-      return;
-    }
-
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/cart/add`,
         {
           method: "POST",
+          credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ product_id: productId, quantity }),
-          credentials: "include",
         }
       );
 
@@ -108,13 +76,13 @@ export const AppContextProvider = ({ children }) => {
       if (!res.ok) throw new Error(data.message || "Failed to add");
 
       toast.success("Added to cart!");
-      await fetchCart();
+      await fetchCart(); // Refresh cart
     } catch (err) {
-      toast.error(err.message || "Failed to add to cart");
+      toast.error(err.message || "Out of stock or failed to add");
     }
   };
 
-  // === UPDATE CART QUANTITY ===
+  // === UPDATE QUANTITY ===
   const updateCartQuantity = async (cartItemId, quantity) => {
     if (quantity < 1) {
       await removeFromCart(cartItemId);
@@ -122,108 +90,55 @@ export const AppContextProvider = ({ children }) => {
     }
 
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/cart/update`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ cart_item_id: cartItemId, quantity }),
-          credentials: "include",
-        }
-      );
-
-      if (!res.ok) throw new Error("Update failed");
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/cart/update`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cart_item_id: cartItemId, quantity }),
+      });
       await fetchCart();
     } catch (err) {
-      toast.error("Failed to update cart");
+      toast.error("Failed to update");
     }
   };
 
   // === REMOVE FROM CART ===
   const removeFromCart = async (cartItemId) => {
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/cart/remove`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ cart_item_id: cartItemId }),
-          credentials: "include",
-        }
-      );
-
-      if (!res.ok) throw new Error("Remove failed");
-      toast.success("Removed from cart");
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/cart/remove`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cart_item_id: cartItemId }),
+      });
+      toast.success("Removed");
       await fetchCart();
     } catch (err) {
-      toast.error("Failed to remove item");
+      toast.error("Failed to remove");
     }
   };
 
   // === CART HELPERS ===
   const getCartCount = () => cart.item_count || 0;
-  const getCartAmount = () => cart.total || 0;
+  const getCartTotal = () => cart.total || 0; // ← NOW THIS EXISTS!
+  const getCartAmount = () => cart.total || 0; // Keep both for backward compat
 
-  // === LOGIN ===
-  const login = async (email, password) => {
-    try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
-          credentials: "include",
-        }
-      );
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Login failed");
-
-      await fetchUser(); // Re-fetch user with new cookie
-      toast.success("Logged in successfully!");
-      router.push("/");
-    } catch (err) {
-      toast.error(err.message || "Login failed");
-      throw err;
-    }
-  };
-
-  // === LOGOUT ===
-  const logout = () => {
-    // Clear cookie with SameSite=None; Secure
-    document.cookie =
-      "token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT; secure; samesite=none";
-
-    setUser(null);
-    setCart({ items: [], total: 0, item_count: 0 });
-    toast.success("Logged out");
-    router.push("/");
-  };
-
-  // === EFFECTS ===
-  useEffect(() => {
-    fetchUser();
-  }, []);
-
+  // === INITIAL LOAD ===
   useEffect(() => {
     fetchCart();
-  }, [user]);
+  }, []);
 
-  // === CONTEXT VALUE ===
   const value = {
     currency,
-    user,
-    login,
-    logout,
-    isLoading,
     products,
     cart,
+    loadingCart,
     addToCart,
     updateCartQuantity,
     removeFromCart,
     getCartCount,
-    getCartAmount,
+    getCartTotal, // ← NOW AVAILABLE EVERYWHERE
+    getCartAmount, // ← old name still works
     router,
   };
 
